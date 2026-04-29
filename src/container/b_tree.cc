@@ -75,14 +75,17 @@ BTree::split_child (Node *x, size_t i)
 void
 BTree::insert_nonfull (Node *x, int k, Record *v)
 {
-  size_t i = x->n;
-  if (x->leaf)
+  size_t i = 0, j = x->n;
+  while (i < x->n && k > x->k[i]) i++;
+
+  if (i < x->n && k == x->k[i]) x->v[i] = v;
+  else if (x->leaf)
     {
-      while (i > 0 && k < x->k[i - 1])
+      while (j > 0 && k < x->k[j - 1])
         {
-          x->k[i] = x->k[i - 1];
-          x->v[i] = x->v[i - 1];
-          i--;
+          x->k[j] = x->k[j - 1];
+          x->v[j] = x->v[j - 1];
+          j--;
         }
 
       x->k[i] = k;
@@ -91,15 +94,16 @@ BTree::insert_nonfull (Node *x, int k, Record *v)
     }
   else
     {
-      while (i > 0 && k < x->k[i - 1]) i--;
-
       if (x->p[i]->n == 2 * d - 1)
-        {
-          split_child (x, i);
-          if (k > x->k[i]) i++;
-        }
+        split_child (x, i);
 
-      insert_nonfull (x->p[i], k, v);
+      if (k == x->k[i]) x->v[i] = v;
+      else
+        {
+          if (k > x->k[i]) i++;
+          
+          insert_nonfull (x->p[i], k, v);
+        }
     }
 }
 
