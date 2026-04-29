@@ -15,7 +15,8 @@ class BTree
 
   /* Helper functions */
 
-  void delete_tree (Node *x)
+  void
+  delete_tree (Node *x)
   {
     if (!x) return;
 
@@ -46,7 +47,8 @@ public:
 
   /* Wrapper functions */
 
-  Record *search_item (int k)
+  Record *
+  search_item (int k)
   {
     size_t i;
     Node *x = search_tree (k, i);
