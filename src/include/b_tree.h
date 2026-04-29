@@ -32,7 +32,7 @@ class BTree
   void split_child (Node *x, size_t i);
   void insert_nonfull (Node *x, int k, Record *v);
 
-  void merge_child (Node *x, size_t i);
+  void merge_siblings (Node *x, size_t i);
   void delete_node (Node *x, int k);
 
 public:

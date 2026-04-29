@@ -124,7 +124,7 @@ BTree::insert_item (int k, Record *v)
 /* Deletion */
 
 void
-BTree::merge_child (Node *x, size_t i)
+BTree::merge_siblings (Node *x, size_t i)
 {
   Node *y = x->p[i];
   Node *z = x->p[i + 1];
@@ -202,7 +202,7 @@ BTree::delete_node (Node *x, int k)
         }
       else // Case 2c
         {
-          merge_child (x, i);
+          merge_siblings (x, i);
           delete_node (y, k);
         }
     }
@@ -269,10 +269,10 @@ BTree::delete_node (Node *x, int k)
         {
           if (out_of_bounds)
             {
-              merge_child (x, i - 1);
+              merge_siblings (x, i - 1);
               y = x->p[i - 1];
             }
-          else merge_child (x, i);
+          else merge_siblings (x, i);
         }
 
       delete_node (y, k);
