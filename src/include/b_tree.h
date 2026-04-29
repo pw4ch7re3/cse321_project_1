@@ -27,6 +27,8 @@ class BTree
     delete x;
   }
 
+  void create_tree () { root = allocate_node (d); }
+
   Node *search_node (Node *x, int k, size_t &i);
 
   void split_child (Node *x, size_t i);

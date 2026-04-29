@@ -110,6 +110,8 @@ BTree::insert_nonfull (Node *x, int k, Record *v)
 void
 BTree::insert_item (int k, Record *v)
 {
+  if (!root) create_tree ();
+
   Node *r = root;
   if (r->n == 2 * d - 1)
     {
