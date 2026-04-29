@@ -36,7 +36,7 @@ class BTree
   void delete_node (Node *x, int k);
 
 public:
-  BTree (size_t d) : d (d) { root = allocate_node (d); }
+  BTree (size_t d) : d (d), root (allocate_node (d)) {}
   ~BTree () { delete_tree (root); }
 
   /* Basic operations */
