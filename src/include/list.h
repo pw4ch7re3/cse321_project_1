@@ -6,12 +6,12 @@
 
 struct List
 {
-  bool leaf;  // Flag indicates if this is a leaf
-  size_t n;   // Item counter
-  List **p;   // Points to children
-  int *k;     // Keys
-  Record **v; // Values
-  List *next; // Next node
+  bool leaf;    // Flag indicates if this is a leaf
+  size_t n;     // Item counter
+  List **p;     // Points to children
+  int *k;       // Keys
+  Record **v;   // Values
+  List *next;   // Next node
 
   List ()
   : leaf (true), n (0),
@@ -25,6 +25,6 @@ struct List
   }
 };
 
-List *allocate_list (int d, List *next);
+List *allocate_list (List *next, int d, bool leaf=true);
 
 #endif // LIST_H

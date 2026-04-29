@@ -27,13 +27,17 @@ class BPTree
     delete x;
   }
 
+  void create_tree () { root = allocate_list (nullptr, d); }
+
   void split_child (List *x, size_t i);
+  void insert_nonfull (List *x, int k, Record *v);
 
   void merge_siblings (List *x, size_t i);
   void redistribute_pointers (List *x, size_t i);
 
 public:
-  BPTree ();
+  BPTree (int d)
+  : d(d), root (allocate_list (nullptr, d)) {}
   ~BPTree () { delete_tree (root); }
 
   /* Basic operations */
