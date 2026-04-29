@@ -138,14 +138,167 @@ BPTree::insert_item (int k, Record *v)
 void
 BPTree::merge_siblings (List *x, size_t i)
 {
+  List *y = x->p[i];
+  List *z = x->p[i + 1];
+  size_t j;
+
+  if (y->leaf)
+    {
+      for (j = 0; j < z->n; j++)
+        {
+          y->k[y->n + j] = z->k[j];
+          y->v[y->n + j] = z->v[j];
+        }
+
+      y->n += z->n;
+      y->next = z->next;
+    }
+  else
+    {
+      y->k[y->n] = x->k[i];
+
+      for (j = 0; j < z->n; j++)
+        y->k[y->n + 1 + j] = z->k[j];
+        
+      for (j = 0; j <= z->n; j++)
+        y->p[y->n + 1 + j] = z->p[j];
+        
+      y->n += z->n + 1;
+    }
+
+  for (j = i + 1; j < x->n; j++)
+    x->k[j - 1] = x->k[j];
+    
+  for (j = i + 2; j <= x->n; j++)
+    x->p[j - 1] = x->p[j];
+
+  x->n--;
+
+  delete z;
 }
 
 void
-BPTree::redistribute_pointers (List *x, size_t i)
+BPTree::delete_node (List *x, int k)
 {
+  size_t i = 0, j;
+
+  if (x->leaf)
+    {
+      while (i < x->n && k > x->k[i]) i++;
+
+      if (i < x->n && k == x->k[i])
+        {
+          for (j = i; j < x->n - 1; j++)
+            {
+              x->k[j] = x->k[j + 1];
+              x->v[j] = x->v[j + 1];
+            }
+
+          x->n--;
+        }
+    }
+  else
+    {
+      while (i < x->n && k >= x->k[i]) i++;
+
+      bool out_of_bounds = i >= x->n;
+      List *y = x->p[i];
+      List *z = out_of_bounds ? x->p[i - 1] : x->p[i + 1];
+
+      if (y->n == d - 1 && z->n >= d)
+        {
+          if (out_of_bounds)
+            {
+              if (y->leaf)
+                {
+                  for (j = y->n; j > 0; j--)
+                    {
+                      y->k[j] = y->k[j - 1];
+                      y->v[j] = y->v[j - 1];
+                    }
+
+                  y->k[0] = z->k[z->n - 1];
+                  y->v[0] = z->v[z->n - 1];
+
+                  x->k[i - 1] = z->k[z->n - 1];
+                }
+              else
+                {
+                  for (j = y->n; j > 0; j--)
+                    y->k[j] = y->k[j - 1];
+                  
+                  for (j = y->n + 1; j > 0; j--)
+                  y->p[j] = y->p[j - 1];
+
+                  y->k[0] = x->k[i - 1];
+                  y->p[0] = z->p[z->n];
+
+                  x->k[i - 1] = z->k[z->n - 1];
+                }
+
+              y->n++;
+              z->n--;
+            }
+          else
+            {
+              if (y->leaf)
+                {
+                  y->k[y->n] = z->k[0];
+                  y->v[y->n] = z->v[0];
+
+                  x->k[i] = z->k[1];
+
+                  for (j = 0; j < z->n - 1; j++)
+                    {
+                      z->k[j] = z->k[j + 1];
+                      z->v[j] = z->v[j + 1];
+                    }
+                }
+              else
+                {
+                  y->k[y->n] = x->k[i];
+                  y->p[y->n + 1] = z->p[0];
+
+                  x->k[i] = z->k[0];
+
+                  for (j = 0; j < z->n - 1; j++)
+                    z->k[j] = z->k[j + 1];
+
+                  for (j = 0; j < z->n; j++)
+                    z->p[j] = z->p[j + 1];
+                }
+
+              y->n++;
+              z->n--;  
+            }
+        }
+      else if (y->n == d - 1 && z->n == d - 1)
+        {
+          if (out_of_bounds)
+            {
+              merge_siblings (x, i - 1);
+              y = x->p[i - 1];
+            }
+          else merge_siblings (x, i);
+        }
+
+      delete_node (y, k);
+    }
 }
 
 void
 BPTree::delete_item (int k)
 {
+  if (!root) return;
+
+  delete_node (root, k);
+
+  if (!root->leaf && root->n == 0)
+    {
+      List *r = root;
+
+      root = root->p[0];
+
+      delete r;
+    }
 }

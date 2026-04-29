@@ -95,15 +95,17 @@ BTree::insert_nonfull (Node *x, int k, Record *v)
   else
     {
       if (x->p[i]->n == 2 * d - 1)
-        split_child (x, i);
-
-      if (k == x->k[i]) x->v[i] = v;
-      else
         {
-          if (k > x->k[i]) i++;
-          
-          insert_nonfull (x->p[i], k, v);
+          split_child (x, i);
+
+          if (k == x->k[i]) x->v[i] = v;
+          else
+            {
+              if (k > x->k[i]) i++;
+              insert_nonfull (x->p[i], k, v);
+            }
         }
+      else insert_nonfull (x->p[i], k, v);
     }
 }
 

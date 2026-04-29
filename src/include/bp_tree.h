@@ -10,7 +10,7 @@
 
 class BPTree
 {
-  int d;
+  size_t d;
   List *root;
 
   /* Helper functions */
@@ -33,7 +33,7 @@ class BPTree
   void insert_nonfull (List *x, int k, Record *v);
 
   void merge_siblings (List *x, size_t i);
-  void redistribute_pointers (List *x, size_t i);
+  void delete_node (List *x, int k);
 
 public:
   BPTree (int d)

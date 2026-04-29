@@ -1,5 +1,6 @@
 #include "include/loader.h"
 #include "include/b_tree.h"
+#include "include/bp_tree.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -7,6 +8,7 @@
 #include <filesystem>
 
 static void test_btree (Record *);
+static void test_bptree (Record *);
 
 int
 main ()
@@ -39,8 +41,12 @@ main ()
   show_table (table);
 #endif
 
-#if 1
+#if 0
   test_btree (table);
+#endif
+
+#if 1
+  test_bptree (table);
 #endif
 
   free_table (table);
@@ -58,7 +64,9 @@ test_btree (Record *table)
     {
       btree->insert_item (table[i].student_id, &table[i]);
       record = btree->search_item (table[i].student_id);
-      if (record) printf ("Student %d inserted\n", table[i].student_id);
+      if (record) printf ("Student %d (%s) inserted\n",
+                          table[i].student_id,
+                          record->name);
 
       if (k == 0) k = table[i].student_id;
     }
@@ -68,4 +76,30 @@ test_btree (Record *table)
   if (!record) printf ("Student %d deleted\n", k);
 
   delete btree;
+}
+
+static void
+test_bptree (Record *table)
+{
+  BPTree *bptree = new BPTree (3);
+  size_t n_rows = 10;
+  int k = 0;
+  Record *record;
+
+  for (size_t i = 0; i < n_rows; i++)
+    {
+      bptree->insert_item (table[i].student_id, &table[i]);
+      record = bptree->search_item (table[i].student_id);
+      if (record) printf ("Student %d (%s) inserted\n",
+                          table[i].student_id,
+                          record->name);
+
+      if (k == 0) k = table[i].student_id;
+    }
+
+  bptree->delete_item (k);
+  record = bptree->search_item (k);
+  if (!record) printf ("Student %d deleted\n", k);
+
+  delete bptree;
 }
