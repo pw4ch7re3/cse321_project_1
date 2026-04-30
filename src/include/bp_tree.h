@@ -36,8 +36,7 @@ class BPTree
   void delete_node (List *x, int k);
 
 public:
-  BPTree (int d)
-  : d(d), root (allocate_list (nullptr, d)) {}
+  BPTree (size_t d) : d(d), root (allocate_list (nullptr, d)) {}
   ~BPTree () { delete_tree (root); }
 
   /* Basic operations */
