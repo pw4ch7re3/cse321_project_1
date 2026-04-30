@@ -25,13 +25,6 @@ BTree::search_node (Node *x, int k, size_t &i)
     else                          return search_node (x->p[i], k, i);
 }
 
-Node *
-BTree::search_tree (int k, size_t &i)
-{
-    i = 0;
-    return search_node (root, k, i);
-}
-
 /* Insertion */
 
 void
