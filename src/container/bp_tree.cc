@@ -5,6 +5,9 @@
  * @author Sungho Kim
  * 
  * @todo Lazy implementation.
+ * 
+ * @ref Junghoon Kim, "Chapter 11. Indexing", Introduction to
+ * Database. UNIST, 2026.
  */
 #include "../include/bp_tree.h"
 
