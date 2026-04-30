@@ -43,7 +43,11 @@ public:
 
   /* Basic operations */
 
-  Node *search_tree (int k, size_t &i);
+  Node *search_tree (int k, size_t &i)
+  {
+    return search_node (root, k, i);
+  }
+  
   void insert_item (int k, Record *v);
   void delete_item (int k);
 
