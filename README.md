@@ -48,7 +48,7 @@ Or you can use other commands
 
 In `<REPO>` directory, run `./target/main` to get experiment results.
 
-# Experiment Results
+# Example: Experiment Results
 
 - \# of records = 100000
 - \# of point queries = 10000
