@@ -95,7 +95,7 @@ BTree::split_child (Node *x, size_t i)
 
 /* Implemented in top-down approach. */
 void
-BTree::insert_nonfull (Node *x, int k, Record &v)
+BTree::insert_nonfull (Node *x, int k, Record *v)
 {
   size_t i = x->n;
 
@@ -129,7 +129,7 @@ BTree::insert_nonfull (Node *x, int k, Record &v)
 }
 
 void
-BTree::insert_item (int k, Record v)
+BTree::insert_item (int k, Record *v)
 {
   if (!root) create_tree ();
 
@@ -348,7 +348,7 @@ BTree::get_statistics () const
   size_t node_bytes = sizeof (Node) +
     sizeof (Node *) * (2 * d + 1) +
     sizeof (int) * (2 * d) +
-    sizeof (Record) * (2 * d);
+    sizeof (Record *) * (2 * d);
   Statistics s {};
 
   collect_node_stats (root, 1, s.n_nodes, s.n_keys, s.height);

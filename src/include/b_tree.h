@@ -39,7 +39,7 @@ class BTree
 
   // Insert
   void split_child (Node *x, size_t i);
-  void insert_nonfull (Node *x, int k, Record &v);
+  void insert_nonfull (Node *x, int k, Record *v);
 
   // Delete
   void merge_siblings (Node *x, size_t i);
@@ -57,10 +57,10 @@ public:
   {
     size_t i;
     Node *x = search_node (root, k, i);
-    return x ? &x->v[i] : nullptr;
+    return x ? x->v[i] : nullptr;
   }
 
-  void insert_item (int k, Record v);
+  void insert_item (int k, Record *v);
   void delete_item (int k);
 
   /* Getter functions */

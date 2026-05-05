@@ -201,14 +201,14 @@ BSTree::split_child (Node *x, size_t i)
       /* Temporary containers. */
       Node **tp = new Node *[n_children + 1];
       int *tk = new int[n_children];
-      Record *tv = new Record[n_children];
+      Record **tv = new Record *[n_children];
       /* Numbers of children. */
       size_t n_y = (n_children - 2) / 3;
       size_t n_z = (n_children - 2 - n_y) / 2;
       size_t n_w = n_children - 2 - n_y - n_z;
       /* Promoted keys and values. */
       int k_yz, k_zw;
-      Record v_yz, v_zw;
+      Record *v_yz, *v_zw;
       /* Indices. */
       size_t j, k = 0;
 
@@ -312,7 +312,7 @@ BSTree::split_child (Node *x, size_t i)
 
 /* Implemented in top-down approach. */
 void
-BSTree::insert_nonfull (Node *x, int k, Record &v)
+BSTree::insert_nonfull (Node *x, int k, Record *v)
 {
   size_t i = x->n;
 
@@ -355,7 +355,7 @@ BSTree::insert_nonfull (Node *x, int k, Record &v)
 }
 
 void
-BSTree::insert_item (int k, Record v)
+BSTree::insert_item (int k, Record *v)
 {
   if (!root) create_tree ();
 
@@ -598,7 +598,7 @@ BSTree::get_statistics () const
   size_t node_bytes = sizeof (Node) +
     sizeof (Node *) * (2 * d + 1) +
     sizeof (int) * (2 * d) +
-    sizeof (Record) * (2 * d);
+    sizeof (Record *) * (2 * d);
   Statistics s {};
 
   collect_node_stats (root, 1, s.n_nodes, s.n_keys, s.height);

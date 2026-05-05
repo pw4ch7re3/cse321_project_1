@@ -121,7 +121,7 @@ run_btree (Record *table, size_t n, const std::vector<size_t> &order,
 
   result.insert_ms = measure_ms ([&] {
     for (size_t rid : order)
-      tree.insert_item (table[rid].student_id, table[rid]);
+      tree.insert_item (table[rid].student_id, &table[rid]);
   });
 
   result.valid_after_insert = tree.validate ();
@@ -177,7 +177,7 @@ run_bstree (Record *table, size_t n, const std::vector<size_t> &order,
 
   result.insert_ms = measure_ms ([&] {
     for (size_t rid : order)
-      tree.insert_item (table[rid].student_id, table[rid]);
+      tree.insert_item (table[rid].student_id, &table[rid]);
   });
 
   result.valid_after_insert = tree.validate ();

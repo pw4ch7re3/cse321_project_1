@@ -10,7 +10,7 @@ struct Node
   size_t n;   // Item counter
   Node **p;   // Points to children
   int *k;     // Keys
-  Record *v;  // Values
+  Record **v;  // Values
 
   Node ()
   : leaf (true), n (0),
