@@ -11,7 +11,7 @@ static void show_record (int, Record &);
 Record *
 load_table (const char *pathname)
 {
-  Record *table = new Record[MAX_RECORDS];
+  Record *table = new Record[MAX_RECORDS] ();
 
   std::ifstream file (pathname);
   if (!file.is_open ())

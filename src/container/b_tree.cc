@@ -121,8 +121,7 @@ BTree::insert_nonfull (Node *x, int k, Record &v)
         {
           split_child (x, i);
 
-          i = x->n;
-          while (i < x->n && k < x->k[i]) i--;
+          if (k > x->k[i]) i++;
         }
       
       insert_nonfull (x->p[i], k, v);
@@ -350,7 +349,7 @@ BTree::get_statistics () const
     sizeof (Node *) * (2 * d + 1) +
     sizeof (int) * (2 * d) +
     sizeof (Record) * (2 * d);
-  Statistics s;
+  Statistics s {};
 
   collect_node_stats (root, 1, s.n_nodes, s.n_keys, s.height);
 

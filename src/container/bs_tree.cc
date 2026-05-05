@@ -81,6 +81,41 @@ redistribute_z_to_y (Node *x, Node *y, Node *z, size_t i)
   z->n--;
 }
 
+static void
+split_single_child (Node *x, size_t i, size_t d)
+{
+  Node *z = allocate_node (d);
+  Node *y = x->p[i];
+  size_t j;
+
+  z->leaf = y->leaf;
+
+  for (j = 0; j < d - 1; j++)
+    {
+      z->k[j] = y->k[d + j];
+      z->v[j] = y->v[d + j];
+    }
+
+  if (!y->leaf)
+    for (j = 0; j < d; j++)
+      z->p[j] = y->p[d + j];
+
+  z->n = d - 1;
+  y->n = d - 1;
+
+  for (j = x->n; j > i; j--)
+    {
+      x->k[j] = x->k[j - 1];
+      x->v[j] = x->v[j - 1];
+      x->p[j + 1] = x->p[j];
+    }
+
+  x->k[i] = y->k[d - 1];
+  x->v[i] = y->v[d - 1];
+  x->p[i + 1] = z;
+  x->n++;
+}
+
 void
 BSTree::split_child (Node *x, size_t i)
 {
@@ -305,6 +340,14 @@ BSTree::insert_nonfull (Node *x, int k, Record &v)
 
           i = x->n;
           while (i > 0 && k < x->k[i - 1]) i--;
+
+          if (x->p[i]->n >= 2 * d - 1)
+            {
+              split_single_child (x, i, d);
+              n_splits++;
+
+              if (k > x->k[i]) i++;
+            }
         }
       
       insert_nonfull (x->p[i], k, v);
@@ -556,7 +599,7 @@ BSTree::get_statistics () const
     sizeof (Node *) * (2 * d + 1) +
     sizeof (int) * (2 * d) +
     sizeof (Record) * (2 * d);
-  Statistics s;
+  Statistics s {};
 
   collect_node_stats (root, 1, s.n_nodes, s.n_keys, s.height);
 

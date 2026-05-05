@@ -108,8 +108,7 @@ BPTree::insert_nonfull (List *x, int k, int &v)
         {
           split_child (x, i);
           
-          i = x->n;
-          while (i < x->n && k < x->k[i]) i--;
+          if (k >= x->k[i]) i++;
         }
 
       insert_nonfull (x->p[i], k, v);
@@ -357,7 +356,7 @@ BPTree::get_statistics () const
   size_t internal_nodes;
   size_t internal_bytes;
   size_t leaf_bytes;
-  Statistics s;
+  Statistics s {};
   size_t leaves = 0;
   
   collect_list_stats (root, 1, s.n_nodes, leaves, s.n_keys, s.height);
@@ -480,7 +479,7 @@ BPTree::print_tree (FILE *out) const
               x = q.front ();
               q.pop ();
 
-              fprintf (out, " %c[", x->leaf ? 'leaf' : 'internal');
+              fprintf (out, " %s[", x->leaf ? "leaf" : "internal");
 
               for (j = 0; j < x->n; j++)
                 fprintf (out, "%s%d", j == 0 ? "" : " ", x->k[j]);
