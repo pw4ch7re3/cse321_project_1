@@ -1,7 +1,7 @@
 #include "../include/list.h"
 
 List *
-allocate_list (List *next, int d, bool leaf)
+allocate_list (int d, bool leaf, List *next)
 {
   List *x = new List;
   x->leaf = leaf;
@@ -9,7 +9,7 @@ allocate_list (List *next, int d, bool leaf)
   x->k = new int[2 * d] ();
   
   if (leaf)
-    x->v = new Record *[2 * d] ();
+    x->rid = new int[2 * d] ();
   
   x->next = next;
   

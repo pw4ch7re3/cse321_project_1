@@ -6,12 +6,16 @@
 #ifndef B_TREE_H
 #define B_TREE_H
 
+#include <cstdio>
+#include <cstddef>
 #include "node.h"
+#include "statistics.h"
 
 class BTree
 {
   size_t d;
   Node *root;
+  size_t n_splits; // Counter for split operation
 
   /* Helper functions */
 
@@ -27,40 +31,47 @@ class BTree
     delete x;
   }
 
+  // Create
   void create_tree () { root = allocate_node (d); }
 
+  // Search
   Node *search_node (Node *x, int k, size_t &i);
 
+  // Insert
   void split_child (Node *x, size_t i);
-  void insert_nonfull (Node *x, int k, Record *v);
+  void insert_nonfull (Node *x, int k, Record &v);
 
+  // Delete
   void merge_siblings (Node *x, size_t i);
   void delete_node (Node *x, int k);
 
 public:
-  BTree (size_t d) : d (d), root (allocate_node (d)) {}
+  BTree (size_t d) : d (d), root (allocate_node (d)), n_splits (0) {}
   ~BTree () { delete_tree (root); }
 
   /* Basic operations */
-
-  Node *
-  search_tree (int k, size_t &i)
-  {
-    return search_node (root, k, i);
-  }
   
-  void insert_item (int k, Record *v);
-  void delete_item (int k);
-
-  /* Wrapper functions */
-
+  // search_node() wrapper function
   Record *
   search_item (int k)
   {
     size_t i;
-    Node *x = search_tree (k, i);
-    return x ? x->v[i] : nullptr;
+    Node *x = search_node (root, k, i);
+    return x ? &x->v[i] : nullptr;
   }
+
+  void insert_item (int k, Record v);
+  void delete_item (int k);
+
+  /* Getter functions */
+
+  size_t get_split_count () const { return n_splits; }
+  Statistics get_statistics () const;
+
+  /* Test and debug */
+
+  bool validate () const;
+  void print_tree (FILE *out=stdout) const;
 };
 
 #endif // B_TREE_H

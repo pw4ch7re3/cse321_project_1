@@ -10,21 +10,24 @@ struct List
   size_t n;     // Item counter
   List **p;     // Points to children
   int *k;       // Keys
-  Record **v;   // Values
+
+  /* Leaf node */
+  
+  int *rid;     // Rids
   List *next;   // Next node
 
   List ()
   : leaf (true), n (0),
-    p (nullptr), k (nullptr), v (nullptr),
+    p (nullptr), k (nullptr), rid (nullptr),
     next (nullptr) {}
   ~List ()
   {
     if (p) delete[] p;
     if (k) delete[] k;
-    if (v) delete[] v;
+    if (rid) delete[] rid;
   }
 };
 
-List *allocate_list (List *next, int d, bool leaf=true);
+List *allocate_list (int d, bool leaf=true, List *next=nullptr);
 
 #endif // LIST_H

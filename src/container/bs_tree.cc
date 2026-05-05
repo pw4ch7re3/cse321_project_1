@@ -7,8 +7,10 @@
  * @todo Lazy implementation.
  */
 #include "../include/bs_tree.h"
+#include <climits>
+#include <queue>
 
-/* Search */
+/* === Search === */
 
 Node *
 BSTree::search_node (Node *x, int k, size_t &i)
@@ -21,245 +23,314 @@ BSTree::search_node (Node *x, int k, size_t &i)
     else                          return search_node (x->p[i], k, i);
 }
 
-/* Insertion */
+/* === Insertion === */
+
+static void
+redistribute_y_to_z (Node *x, Node *y, Node *z, size_t i)
+{
+  size_t j;
+
+  for (j = z->n; j > 0; j--)
+    {
+      z->k[j] = z->k[j - 1];
+      z->v[j] = z->v[j - 1];
+    }
+  z->k[0] = x->k[i];
+  z->v[0] = x->v[i];
+
+  if (!z->leaf)
+    {
+      for (j = z->n + 1; j > 0; j--)
+        z->p[j] = z->p[j - 1];
+      z->p[0] = y->p[y->n];
+    }
+
+  z->n++;
+
+  y->n--;
+
+  x->k[i] = y->k[y->n];
+  x->v[i] = y->v[y->n];
+}
+
+static void
+redistribute_z_to_y (Node *x, Node *y, Node *z, size_t i)
+{
+  size_t j;
+
+  y->k[y->n] = x->k[i];
+  y->v[y->n] = x->v[i];
+
+  if (!y->leaf) y->p[y->n + 1] = z->p[0];
+
+  y->n++;
+
+  x->k[i] = z->k[0];
+  x->v[i] = z->v[0];
+
+  for (j = 0; j < z->n - 1; j++)
+    {
+      z->k[j] = z->k[j + 1];
+      z->v[j] = z->v[j + 1];
+    }
+
+  if (!z->leaf)
+    for (j = 0; j < z->n; j++)
+      z->p[j] = z->p[j + 1];
+
+  z->n--;
+}
 
 void
 BSTree::split_child (Node *x, size_t i)
 {
-  if (i == x->n) i--; 
+  while (i >= x->n) i--;
 
   Node *y = x->p[i];
   Node *z = x->p[i + 1];
-  size_t j;
 
+  /**
+   * Before calling split_child(),
+   * 
+   * x
+   * ... | p_i | k_2 | v_2 | p_i+1 | ...
+   *        |                 |
+   *        y                 z
+   * 
+   * y
+   * ... | k_0 | v_0 | p_1 | k_1 | v_1 | p_2
+   * 
+   * z
+   * p_3 | k_3 | v_3 | ...
+   * 
+   * where k_0 < k_1 < k_2 < k_3.
+   * ---------------------------------------
+   * After terminating split_child(),
+   * 
+   * x
+   * ... | p_i | k_1 | v_1 | p_i+1 | ...
+   *        |                 |
+   *        y                 z
+   * 
+   * y
+   * ... | k_0 | v_0 | p_1
+   * 
+   * z
+   * p_2 | k_2 | v_2 | p_3 | k_3 | v_3 | ...
+   * 
+   * where k_0 < k_1 < k_2 < k_3, still.
+   */
   if (z->n < 2 * d - 1)
-    {
-      for (j = z->n; j > 0; j--)
-        {
-          z->k[j] = z->k[j - 1];
-          z->v[j] = z->v[j - 1];
-        }
+    redistribute_y_to_z (x, y, z, i);
 
-      if (!z->leaf)
-        for (j = z->n + 1; j > 0; j--)
-          z->p[j] = z->p[j - 1];
-
-      z->k[0] = x->k[i];
-      z->v[0] = x->v[i];
-
-      if (!z->leaf) z->p[0] = y->p[y->n];
-
-      z->n++;
-
-      x->k[i] = y->k[y->n - 1];
-      x->v[i] = y->v[y->n - 1];
-
-      y->n--;
-    }
+  /**
+   * Before calling split_child(),
+   * 
+   * x
+   * ... | p_i | k_1 | v_1 | p_i+1 | ...
+   *        |                 |
+   *        y                 z
+   * 
+   * y
+   * ... | k_0 | v_0 | p_1
+   * 
+   * z
+   * p_2 | k_2 | v_2 | p_3 | k_3 | v_3 | ...
+   * 
+   * where k_0 < k_1 < k_2 < k_3.
+   * ---------------------------------------
+   * After terminating split_child(),
+   * 
+   * x
+   * ... | p_i | k_2 | v_2 | p_i+1 | ...
+   *        |                 |
+   *        y                 z
+   * 
+   * y
+   * ... | k_0 | v_0 | p_1 | k_1 | v_1 | p_2
+   * 
+   * z
+   * p_3 | k_3 | v_3 | ...
+   * 
+   * where k_0 < k_1 < k_2 < k_3, still.
+   */
   else if (y->n < 2 * d - 1)
+    redistribute_z_to_y (x, y, z, i);
+
+  else /* y->n >= 2 * d - 1 && z->n >= 2 * d - 1 */
     {
-      y->k[y->n] = x->k[i];
-      y->v[y->n] = x->v[i];
-
-      if (!y->leaf) y->p[y->n + 1] = z->p[0];
-
-      y->n++;
-
-      x->k[i] = z->k[0];
-      x->v[i] = z->v[0];
-
-      for (j = 0; j < z->n - 1; j++)
-        {
-          z->k[j] = z->k[j + 1];
-          z->v[j] = z->v[j + 1];
-        }
-
-      if (!z->leaf)
-        for (j = 0; j < z->n; j++)
-          z->p[j] = z->p[j + 1];
-
-      z->n--;
-    }
-  else
-    {
-      size_t n_children = 4 * d - 1;
-
-      /* New node */
-
+      /* Expected as 4 * d - 1. */
+      size_t n_children = y->n + z->n + 1;
+      /* New node to be splitted. */
       Node *w = allocate_node (d);
-
-      w->leaf = y->leaf;
-
-      /* Temporary containers */
-
-      Node **p = new Node *[n_children + 1];
-      int *k = new int[n_children];
-      Record **v = new Record *[n_children];
-
-      for (j = 0; j < y->n; j++)
-        {
-          k[j] = y->k[j];
-          v[j] = y->v[j];
-
-          p[j] = y->p[j];
-        }
-
-      k[y->n] = x->k[i];
-      v[y->n] = x->v[i];
-
-      p[y->n] = y->p[y->n];
-
-      for (j = 0; j < z->n; j++)
-        {
-          k[y->n + 1 + j] = z->k[j];
-          v[y->n + 1 + j] = z->v[j];
-
-          p[y->n + 1 + j] = z->p[j];
-        }
-
-      p[n_children] = z->p[z->n];
-
-      /* Number of children at each node */
-
+      /* Temporary containers. */
+      Node **tp = new Node *[n_children + 1];
+      int *tk = new int[n_children];
+      Record *tv = new Record[n_children];
+      /* Numbers of children. */
       size_t n_y = (n_children - 2) / 3;
       size_t n_z = (n_children - 2 - n_y) / 2;
       size_t n_w = n_children - 2 - n_y - n_z;
+      /* Promoted keys and values. */
+      int k_yz, k_zw;
+      Record v_yz, v_zw;
+      /* Indices. */
+      size_t j, k = 0;
 
+      /* Y, Z, and W are in the same depth. */
+      w->leaf = y->leaf;      
+
+      /* Store data into temporary containers. */
+      for (j = 0; j < y->n; j++)
+        {
+          tk[j] = y->k[j];
+          tv[j] = y->v[j];
+          tp[j] = y->p[j];
+        }
+      tk[y->n] = x->k[i];
+      tv[y->n] = x->v[i];
+      tp[y->n] = y->p[y->n];
+
+      for (j = 0; j < z->n; j++)
+        {
+          tk[y->n + 1 + j] = z->k[j];
+          tv[y->n + 1 + j] = z->v[j];
+          tp[y->n + 1 + j] = z->p[j];
+        }
+      tp[n_children] = z->p[z->n];
+
+      /* Difference between numbers of data is at most 1. */
       y->n = n_y;
       z->n = n_z;
       w->n = n_w;
 
-      /* Redistribute children nodes. */
-      
-      size_t c = 0; // cursor
-
+      /* Fill Y. */
       for (j = 0; j < y->n; j++)
         {
-          y->k[j] = k[c];
-          y->v[j] = v[c];
+          y->k[j] = tk[k];
+          y->v[j] = tv[k];
+          y->p[j] = tp[k];
 
-          y->p[j] = p[c];
-
-          c++;
+          k++;
         }
+      y->p[y->n] = tp[k];
 
-      y->p[y->n] = p[c];
+      /* These will be promoted. */
+      k_yz = tk[k];
+      v_yz = tv[k];
 
-      int k_yz = k[c];
-      Record *v_yz = v[c];
+      k++;
 
-      c++;
-
+      /* Fill Z. */
       for (j = 0; j < z->n; j++)
         {
-          z->k[j] = k[c];
-          z->v[j] = v[c];
+          z->k[j] = tk[k];
+          z->v[j] = tv[k];
+          z->p[j] = tp[k];
 
-          z->p[j] = p[c];
-
-          c++;
+          k++;
         }
+      z->p[z->n] = tp[k];
 
-      z->p[z->n] = p[c];
-
-      int k_zw = k[c];
-      Record *v_zw = v[c];
+      /* These will be promoted. */
+      k_zw = tk[k];
+      v_zw = tv[k];
       
-      c++;
+      k++;
 
+      /* Fill W. */
       for (j = 0; j < w->n; j++)
         {
-          w->k[j] = k[c];
-          w->v[j] = v[c];
+          w->k[j] = tk[k];
+          w->v[j] = tv[k];
+          w->p[j] = tp[k];
           
-          w->p[j] = p[c];
-          
-          c++;
+          k++;
         }
+      w->p[w->n] = tp[k];
 
-      w->p[w->n] = p[c];
-
-      /* Update parent node. */
-
+      /* Do promotion. */
       for (j = x->n; j > i; j--)
         {
           x->k[j] = x->k[j - 1];
           x->v[j] = x->v[j - 1];
-
           x->p[j + 1] = x->p[j];
         }
-
       x->k[i] = k_yz;
       x->v[i] = v_yz;
-
       x->k[i + 1] = k_zw;
       x->v[i + 1] = v_zw;
 
+      /* Insert W's pointer into X. */
       x->p[i + 2] = w;
 
       x->n++;
 
-      delete[] p;
-      delete[] k;
-      delete[] v;
+      /* Free temporary containers. */
+      delete[] tp;
+      delete[] tk;
+      delete[] tv;
+
+      n_splits++;
     }
 }
 
+/* Implemented in top-down approach. */
 void
-BSTree::insert_nonfull (Node *x, int k, Record *v)
+BSTree::insert_nonfull (Node *x, int k, Record &v)
 {
-  size_t i = 0, j = x->n;
-  while (i < x->n && k > x->k[i]) i++;
+  size_t i = x->n;
 
-  if (i < x->n && k == x->k[i]) x->v[i] = v;
-  else if (x->leaf)
+  if (x->leaf)
     {
-      while (j > 0 && k < x->k[j - 1])
+      while (i > 0 && k < x->k[i - 1])
         {
-          x->k[j] = x->k[j - 1];
-          x->v[j] = x->v[j - 1];
-          j--;
-        }
+          x->k[i] = x->k[i - 1];
+          x->v[i] = x->v[i - 1];
 
+          i--;
+        }
       x->k[i] = k;
       x->v[i] = v;
+
       x->n++;
     }
   else
     {
-      if (x->p[i]->n == 2 * d - 1)
+      while (i > 0 && k < x->k[i - 1]) i--;
+
+      if (x->p[i]->n >= 2 * d - 1)
         {
           split_child (x, i);
 
-          i = 0;
-          while (i < x->n && k > x->k[i]) i++;
-
-          if (i < x->n && k == x->k[i]) x->v[i] = v;
-          else insert_nonfull (x->p[i], k, v);
+          i = x->n;
+          while (i > 0 && k < x->k[i - 1]) i--;
         }
-      else insert_nonfull (x->p[i], k, v);
+      
+      insert_nonfull (x->p[i], k, v);
     }
 }
 
 void
-BSTree::insert_item (int k, Record *v)
+BSTree::insert_item (int k, Record v)
 {
   if (!root) create_tree ();
 
   Node *r = root;
-  if (r->n == 2 * d - 1)
+  if (r->n >= 2 * d - 1)
     {
       Node *s = allocate_node (d);
-      
+      Node *t = allocate_node (d);
+
       root = s;
+
       s->leaf = false;
       s->p[0] = r;
 
-      Node *t = allocate_node (d);
-
+      /* R and T are in the same depth. */
       t->leaf = r->leaf;
-      t->n = d - 1;
       
+      /* Move half of elements from R to T. */
       for (size_t j = 0; j < d - 1; j++)
         {
           t->k[j] = r->k[d + j];
@@ -269,232 +340,77 @@ BSTree::insert_item (int k, Record *v)
       if (!r->leaf)
         for (size_t j = 0; j < d; j++)
           t->p[j] = r->p[d + j];
-          
+
+      t->n = d - 1;
+
+      /* Now, R has half of elements. */
       r->n = d - 1;
       
+      /* Promote middle key in original R. */
       s->k[0] = r->k[d - 1];
       s->v[0] = r->v[d - 1];
 
+      /* Insert T's pointer into S. */
       s->p[1] = t;
 
       s->n++;
 
       insert_nonfull (s, k, v);
+
+      n_splits++;
     }
   else insert_nonfull (r, k, v);
 }
 
-/* Deletion */
+/* === Deletion === */
 
 void
 BSTree::merge_siblings (Node *x, size_t i)
 {
-  size_t n = (4 * d - 2) / 3;
   Node *y = x->p[i];
+  Node *z = x->p[i + 1];
   size_t j;
+  size_t n_y = y->n;
 
-  if (y->n >= n) { /* do nothing */ }
-  else if (i > 0 && x->p[i - 1]->n > n)
+  y->k[n_y] = x->k[i];
+  y->v[n_y] = x->v[i];
+  for (j = 0; j < z->n; j++)
     {
-      Node *z = x->p[i - 1];
-      
-      for (j = y->n; j > 0; j--)
-        {
-          y->k[j] = y->k[j - 1];
-          y->v[j] = y->v[j - 1];
-        }
-
-      if (!y->leaf)
-        for (j = y->n + 1; j > 0; j--)
-          y->p[j] = y->p[j - 1];
-
-      y->k[0] = x->k[i - 1];
-      y->v[0] = x->v[i - 1];
-
-      if (!y->leaf) y->p[0] = z->p[z->n];
-
-      y->n++;
-
-      x->k[i - 1] = z->k[z->n - 1];
-      x->v[i - 1] = z->v[z->n - 1];
-
-      z->n--;
+      y->k[n_y + 1 + j] = z->k[j];
+      y->v[n_y + 1 + j] = z->v[j];
     }
-  else if (i < x->n && x->p[i + 1]->n > n)
+
+  if (!y->leaf)
+    for (j = 0; j <= z->n; j++)
+      y->p[n_y + 1 + j] = z->p[j];
+
+  y->n += z->n + 1;
+
+  for (j = i + 1; j < x->n; j++)
     {
-      Node *z = x->p[i + 1];
-      
-      y->k[y->n] = x->k[i];
-      y->v[y->n] = x->v[i];
-
-      if (!y->leaf) y->p[y->n + 1] = z->p[0];
-      
-      y->n++;
-
-      x->k[i] = z->k[0];
-      x->v[i] = z->v[0];
-
-      for (j = 0; j < z->n - 1; j++)
-        {
-          z->k[j] = z->k[j + 1];
-          z->v[j] = z->v[j + 1];
-        }
-      
-      if (!z->leaf)
-        for (j = 0; j < z->n; j++)
-          z->p[j] = z->p[j + 1];
-          
-      z->n--;
+      x->k[j - 1] = x->k[j];
+      x->v[j - 1] = x->v[j];
     }
-  else if (x->n == 1)
-    {
-      Node *z = x->p[0];
-      Node *w = x->p[1];
-      
-      z->k[z->n] = x->k[0];
-      z->v[z->n] = x->v[0];
-      
-      for (j = 0; j < w->n; j++)
-        {
-          z->k[z->n + 1 + j] = w->k[j];
-          z->v[z->n + 1 + j] = w->v[j];
-        }
 
-      if (!z->leaf)
-        for (j = 0; j <= w->n; j++)
-          z->p[z->n + 1 + j] = w->p[j];
-          
-      z->n += w->n + 1;
-      x->n = 0;
+  for (j = i + 2; j <= x->n; j++)
+    x->p[j - 1] = x->p[j];
 
-      delete w;
-    }
-  else
-    {
-      size_t i_ = i == x->n ? i - 2 : (i == 0 ? 0 : i - 1);
-      
-      Node *z = x->p[i_];
-      Node *w = x->p[i_ + 1];
-      Node *u = x->p[i_ + 2];
+  x->n--;
 
-      size_t n_children = z->n + w->n + u->n + 2;
-      
-      Node **p = new Node *[n_children + 1];
-      int *k = new int[n_children];
-      Record **v = new Record *[n_children];
-
-      size_t c = 0; // cursor
-      
-      for (j = 0; j < z->n; j++)
-        {
-          k[c] = z->k[j];
-          v[c] = z->v[j];
-
-          p[c] = z->p[j];
-
-          c++;
-        }
-
-      p[c] = z->p[z->n];
-      
-      k[c] = x->k[i_];
-      v[c] = x->v[i_];
-      
-      c++;
-      
-      for (j = 0; j < w->n; j++)
-        {
-          k[c] = w->k[j];
-          v[c] = w->v[j];
-
-          p[c] = w->p[j];
-
-          c++;
-        }
-
-      p[c] = w->p[w->n];
-      
-      k[c] = x->k[i_ + 1];
-      v[c] = x->v[i_ + 1];
-      
-      c++;
-      
-      for (j = 0; j < u->n; j++)
-        {
-          k[c] = u->k[j];
-          v[c] = u->v[j];
-
-          p[c] = u->p[j];
-
-          c++;
-        }
-
-      p[c] = u->p[u->n];
-
-      size_t n_z = (n_children - 1) / 2;
-      size_t n_w = n_children - 1 - n_z;
-
-      z->n = n_z;
-      w->n = n_w;
-
-      c = 0;
-
-      for (j = 0; j < z->n; j++)
-        {
-          z->k[j] = k[c];
-          z->v[j] = v[c];
-
-          z->p[j] = p[c];
-
-          c++;
-        }
-      
-      z->p[z->n] = p[c];
-
-      x->k[i_] = k[c];
-      x->v[i_] = v[c];
-      
-      c++;
-
-      for (j = 0; j < w->n; j++)
-        {
-          w->k[j] = k[c];
-          w->v[j] = v[c];
-          
-          w->p[j] = p[c];
-
-          c++;
-        }
-
-      w->p[w->n] = p[c];
-
-      for (j = i_ + 1; j < x->n - 1; j++)
-        {
-          x->k[j] = x->k[j + 1];
-          x->v[j] = x->v[j + 1];
-
-          x->p[j + 1] = x->p[j + 2];
-        }
-
-      x->n--;
-
-      delete u;
-
-      delete[] p;
-      delete[] k;
-      delete[] v;
-    }
+  delete z;
 }
 
 void
 BSTree::delete_node (Node *x, int k)
 {
-  size_t i = 0, j;
+  if (!x) return;
+
+  size_t i = 0;
   while (i < x->n && k > x->k[i]) i++;
 
   if (x->leaf && i < x->n && k == x->k[i])
     {
-      for (j = i; j < x->n - 1; j++)
+      for (size_t j = i; j < x->n - 1; j++)
         {
           x->k[j] = x->k[j + 1];
           x->v[j] = x->v[j + 1];
@@ -504,26 +420,118 @@ BSTree::delete_node (Node *x, int k)
     }
   else if (!x->leaf && i < x->n && k == x->k[i])
     {
-      Node *w = x->p[i];
-      while (!w->leaf) w = w->p[w->n];
-      
-      x->k[i] = w->k[w->n - 1];
-      x->v[i] = w->v[w->n - 1];
-      
-      delete_node (x->p[i], x->k[i]);
+      Node *y = x->p[i];
+      if (y->n >= d)
+        {
+          Node *w = y;
+          while (!w->leaf) w = w->p[w->n];
+
+          int pred_key = w->k[w->n - 1];
+          x->k[i] = pred_key;
+          x->v[i] = w->v[w->n - 1];
+
+          delete_node (y, pred_key);
+
+          goto done;
+        }
+
+      Node *z = x->p[i + 1];
+      if (z->n >= d)
+        {
+          Node *w = z;
+          while (!w->leaf) w = w->p[0];
+
+          int succ_key = w->k[0];
+          x->k[i] = succ_key;
+          x->v[i] = w->v[0];
+
+          delete_node (z, succ_key);
+
+          goto done;
+        }
+
       merge_siblings (x, i);
+
+      delete_node (y, k);
     }
-  else
+  else if (!x->leaf && (i >= x->n || k < x->k[i]))
     {
-      delete_node (x->p[i], k);
-      merge_siblings (x, i);
+      bool out_of_bounds = i >= x->n;
+      Node *y = x->p[i];
+      Node *z = out_of_bounds ? x->p[i - 1] : x->p[i + 1];
+
+      if (y->n <= d - 1 && z->n >= d)
+        {
+          size_t j;
+
+          if (out_of_bounds)
+            {
+              std::swap (x->k[i - 1], z->k[z->n - 1]);
+              std::swap (x->v[i - 1], z->v[z->n - 1]);
+
+              for (j = y->n; j > 0; j--)
+                {
+                  y->k[j] = y->k[j - 1];
+                  y->v[j] = y->v[j - 1];
+                }
+              y->k[0] = z->k[z->n - 1];
+              y->v[0] = z->v[z->n - 1];
+
+              if (!y->leaf)
+                {
+                  for (j = y->n + 1; j > 0; j--)
+                    y->p[j] = y->p[j - 1];
+                  y->p[0] = z->p[z->n];
+                }
+
+              y->n++;
+              z->n--;
+            }
+          else
+            {
+              std::swap (x->k[i], z->k[0]);
+              std::swap (x->v[i], z->v[0]);
+
+              y->k[y->n] = z->k[0];
+              y->v[y->n] = z->v[0];
+              for (j = 0; j < z->n - 1; j++)
+                {
+                  z->k[j] = z->k[j + 1];
+                  z->v[j] = z->v[j + 1];
+                }
+
+              if (!y->leaf && !z->leaf)
+                {
+                  y->p[y->n + 1] = z->p[0];
+                  for (j = 0; j < z->n; j++)
+                    z->p[j] = z->p[j + 1];
+                }
+
+              y->n++;
+              z->n--;
+            }
+        }
+      else if (y->n <= d - 1 && z->n <= d - 1)
+        {
+          if (out_of_bounds)
+            {
+              merge_siblings (x, i - 1);
+
+              y = x->p[i - 1];
+            }
+          else merge_siblings (x, i);
+        }
+
+      delete_node (y, k);
     }
+
+  done: return;
 }
 
 void
 BSTree::delete_item (int k)
 {
-  if (!root) return;
+  if (!root) goto done;
 
   delete_node (root, k);
 
@@ -534,5 +542,122 @@ BSTree::delete_item (int k)
       root = root->p[0];
       
       delete r;
+    }
+
+  done: return;
+}
+
+/* === Getter functions === */
+
+Statistics
+BSTree::get_statistics () const
+{
+  size_t node_bytes = sizeof (Node) +
+    sizeof (Node *) * (2 * d + 1) +
+    sizeof (int) * (2 * d) +
+    sizeof (Record) * (2 * d);
+  Statistics s;
+
+  collect_node_stats (root, 1, s.n_nodes, s.n_keys, s.height);
+
+  s.n_bytes = s.n_nodes * node_bytes;
+  s.utilization = s.n_nodes == 0 ? 0.0 :
+    static_cast<double> (s.n_keys) /
+    static_cast<double> (s.n_nodes * (2 * d - 1));
+  
+  return s;
+}
+
+/* === Test and debug === */
+
+static bool
+validate_node (Node *x, bool is_root, size_t d,
+               int min_key, int max_key,
+               size_t depth, size_t &leaf_depth)
+{
+  /* Properties */
+  if (!x ||
+      (!is_root && x->n < d - 1) ||
+      x->n > 2 * d - 1)
+    return false;
+
+  size_t i;
+
+  /* Ordering */
+  for (i = 0; i < x->n; i++)
+    {
+      if (x->k[i] < min_key || x->k[i] > max_key) return false;
+      if (i > 0 && x->k[i - 1] >= x->k[i]) return false;
+    }
+
+  if (x->leaf) // Base case
+    {
+      if (leaf_depth == 0) leaf_depth = depth;
+
+      return leaf_depth == depth;
+    }
+  else // Recursive step
+    {
+      for (i = 0; i <= x->n; i++)
+        {
+          int child_min = i == 0 ? min_key : x->k[i - 1];
+          int child_max = i == x->n ? max_key : x->k[i];
+          if (!validate_node (x->p[i], false, d,
+                              child_min, child_max,
+                              depth + 1, leaf_depth))
+            return false;
+        }
+
+      return true;
+    }
+}
+
+bool
+BSTree::validate () const
+{
+  size_t leaf_depth = 0;
+  return validate_node (root, true, d,
+                        INT_MIN, INT_MAX,
+                        1, leaf_depth);
+}
+
+void
+BSTree::print_tree (FILE *out) const
+{
+  if (!root) fprintf (out, "(empty)\n");
+  else
+    {
+      std::queue<Node *> q;
+      Node *x;
+      size_t n;
+      size_t i, j;
+
+      q.push (root);
+
+      for (i = 0; !q.empty (); i++)
+        {
+          fprintf (out, "depth %zu:", i);
+          
+          n = q.size ();
+
+          for (i = 0; i < n; i++)
+            {
+              x = q.front ();
+              q.pop ();
+
+              fprintf (out, " [");
+
+              for (j = 0; j < x->n; j++)
+                fprintf (out, "%s%d", j == 0 ? "" : " ", x->k[j]);
+
+              fprintf (out, "]");
+
+              if (!x->leaf)
+                for (j = 0; j <= x->n; j++)
+                  q.push (x->p[j]);
+            }
+
+          fprintf (out, "\n");
+        }
     }
 }
