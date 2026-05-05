@@ -31,6 +31,7 @@ struct ExperimentResult
   double range_ms;
   double delete_ms;
   size_t splits;
+  size_t merges;
   Statistics stats;
   bool valid_after_insert;
   bool valid_after_delete;
@@ -126,7 +127,8 @@ run_btree (Record *table, size_t n, const std::vector<size_t> &order,
 
   result.valid_after_insert = tree.validate ();
   result.stats = tree.get_statistics ();
-  result.splits = tree.get_split_count ();
+  result.splits = tree.get_split_counter ();
+  result.merges = tree.get_merge_counter ();
 
   size_t found = 0;
   double search_ms = measure_ms ([&] {
@@ -183,6 +185,7 @@ run_bstree (Record *table, size_t n, const std::vector<size_t> &order,
   result.valid_after_insert = tree.validate ();
   result.stats = tree.get_statistics ();
   result.splits = tree.get_split_counter ();
+  result.merges = tree.get_merge_counter ();
 
   size_t found = 0;
   double search_ms = measure_ms ([&] {
@@ -239,6 +242,7 @@ run_bptree (Record *table, size_t n, const std::vector<size_t> &order,
   result.valid_after_insert = tree.validate ();
   result.stats = tree.get_statistics ();
   result.splits = tree.get_split_counter ();
+  result.merges = tree.get_merge_counter ();
 
   size_t found = 0;
   double search_ms = measure_ms ([&] {
@@ -283,7 +287,7 @@ print_result (const ExperimentResult &r)
 {
   printf ("%-7s d=%-2zu insert=%8.2f ms search=%7.3f us "
           "range=%7.2f ms delete=%7.2f ms nodes=%6zu height=%2zu "
-          "util=%5.1f%% splits=%6zu memory=%8.1f KiB valid=%s/%s "
+          "util=%5.1f%% splits=%6zu merges=%6zu memory=%8.1f KiB valid=%s/%s "
           "range_count=%5zu avg_gpa=%4.2f avg_height=%5.1f\n",
           r.name,
           r.d,
@@ -295,6 +299,7 @@ print_result (const ExperimentResult &r)
           r.stats.height,
           r.stats.utilization * 100.0,
           r.splits,
+          r.merges,
           r.stats.n_bytes / 1024.0,
           r.valid_after_insert ? "yes" : "no",
           r.valid_after_delete ? "yes" : "no",

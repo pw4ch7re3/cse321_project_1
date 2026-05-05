@@ -16,6 +16,7 @@ class BPTree
   size_t d;
   List *root;
   size_t n_splits; // Counter for split operation
+  size_t n_merges; // Counter for split operation
 
   /* Helper functions */
 
@@ -46,7 +47,8 @@ class BPTree
   void delete_node (List *x, int k);
 
 public:
-  BPTree (size_t d) : d(d), root (allocate_list (d)), n_splits (0) {}
+  BPTree (size_t d) : d(d), root (allocate_list (d)),
+                      n_splits (0), n_merges (0) {}
   ~BPTree () { delete_tree (root); }
 
   /* Basic operations */
@@ -68,6 +70,7 @@ public:
   /* Getter functions */
 
   size_t get_split_counter () const { return n_splits; }
+  size_t get_merge_counter () const { return n_merges; }
   Statistics get_statistics () const;
 
   /* Test and debug */

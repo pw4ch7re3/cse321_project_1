@@ -177,6 +177,8 @@ BPTree::merge_siblings (List *x, size_t i)
   x->n--;
 
   delete z;
+
+  n_merges++;
 }
 
 void

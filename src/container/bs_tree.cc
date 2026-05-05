@@ -82,7 +82,7 @@ redistribute_z_to_y (Node *x, Node *y, Node *z, size_t i)
 }
 
 static void
-split_single_child (Node *x, size_t i, size_t d)
+_split_child (Node *x, size_t i, size_t d)
 {
   Node *z = allocate_node (d);
   Node *y = x->p[i];
@@ -343,7 +343,8 @@ BSTree::insert_nonfull (Node *x, int k, Record *v)
 
           if (x->p[i]->n >= 2 * d - 1)
             {
-              split_single_child (x, i, d);
+              _split_child (x, i, d);
+              
               n_splits++;
 
               if (k > x->k[i]) i++;
@@ -441,6 +442,8 @@ BSTree::merge_siblings (Node *x, size_t i)
   x->n--;
 
   delete z;
+
+  n_merges++;
 }
 
 void

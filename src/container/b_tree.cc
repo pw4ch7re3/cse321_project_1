@@ -190,6 +190,8 @@ BTree::merge_siblings (Node *x, size_t i)
 
   /* Free Z's pointer. */
   delete z;
+
+  n_merges++;
 }
 
 void
