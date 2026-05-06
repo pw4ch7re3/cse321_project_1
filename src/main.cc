@@ -113,7 +113,6 @@ static ExperimentResult run_btree(Record *table, size_t n,
   result.valid_after_insert = tree.validate();
   result.stats = tree.get_statistics();
   result.splits = tree.get_split_counter();
-  result.merges = tree.get_merge_counter();
 
   size_t found = 0;
   double search_ms = measure_ms([&] {
@@ -145,6 +144,7 @@ static ExperimentResult run_btree(Record *table, size_t n,
   });
 
   result.valid_after_delete = tree.validate();
+  result.merges = tree.get_merge_counter();
 
   if (found != searches.size())
     result.valid_after_insert = false;
@@ -170,7 +170,6 @@ static ExperimentResult run_bstree(Record *table, size_t n,
   result.valid_after_insert = tree.validate();
   result.stats = tree.get_statistics();
   result.splits = tree.get_split_counter();
-  result.merges = tree.get_merge_counter();
 
   size_t found = 0;
   double search_ms = measure_ms([&] {
@@ -202,6 +201,7 @@ static ExperimentResult run_bstree(Record *table, size_t n,
   });
 
   result.valid_after_delete = tree.validate();
+  result.merges = tree.get_merge_counter();
 
   if (found != searches.size())
     result.valid_after_insert = false;
@@ -227,7 +227,6 @@ static ExperimentResult run_bptree(Record *table, size_t n,
   result.valid_after_insert = tree.validate();
   result.stats = tree.get_statistics();
   result.splits = tree.get_split_counter();
-  result.merges = tree.get_merge_counter();
 
   size_t found = 0;
   double search_ms = measure_ms([&] {
@@ -261,6 +260,7 @@ static ExperimentResult run_bptree(Record *table, size_t n,
   });
 
   result.valid_after_delete = tree.validate();
+  result.merges = tree.get_merge_counter();
 
   if (found != searches.size())
     result.valid_after_insert = false;
